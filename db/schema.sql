@@ -4,168 +4,168 @@
 -- ============================================================
 
 -- ---------- Tipos enumerados ----------
-CREATE TYPE rol_usuario     AS ENUM ('AD', 'TR', 'EM');  -- Admin, Trabajador, Empresa
-CREATE TYPE tipo_movimiento AS ENUM ('E', 'S');          -- Entrada, Salida
+CREATE TYPE ROL_USUARIO     AS ENUM ('AD', 'TR', 'EM');  -- Admin, Trabajador, Empresa
+CREATE TYPE TIPO_MOVIMIENTO AS ENUM ('E', 'S');          -- Entrada, Salida
 
 -- ---------- EMPRESAS ----------
-CREATE TABLE empresas (
-    id_empresa  SERIAL PRIMARY KEY,
-    nombre      VARCHAR(150) NOT NULL,
-    cif         VARCHAR(9)   NOT NULL UNIQUE
+CREATE TABLE EMPRESAS (
+    ID_EMPRESA  SERIAL PRIMARY KEY,
+    NOMBRE      VARCHAR(150) NOT NULL,
+    CIF         VARCHAR(9)   NOT NULL UNIQUE
 );
 
 -- ---------- USUARIOS ----------
-CREATE TABLE usuarios (
-    id_usuario      SERIAL PRIMARY KEY,
-    id_empresa      INT NULL REFERENCES empresas(id_empresa),
-    rol             rol_usuario  NOT NULL,
-    username        VARCHAR(150) NOT NULL UNIQUE,
-    email           VARCHAR(150) NOT NULL UNIQUE,
-    nombre          VARCHAR(150) NOT NULL,
-    contrasena_hash VARCHAR(255) NOT NULL,
+CREATE TABLE USUARIOS (
+    ID_USUARIO      SERIAL PRIMARY KEY,
+    ID_EMPRESA      INT NULL REFERENCES EMPRESAS(ID_EMPRESA),
+    ROL             ROL_USUARIO  NOT NULL,
+    USERNAME        VARCHAR(150) NOT NULL UNIQUE,
+    EMAIL           VARCHAR(150) NOT NULL UNIQUE,
+    NOMBRE          VARCHAR(150) NOT NULL,
+    PASSWORD_HASH   VARCHAR(255) NOT NULL,
     -- EM obligatoriamente con empresa; AD y TR sin empresa
-    CONSTRAINT ck_usuario_rol_empresa CHECK (
-        (rol = 'EM' AND id_empresa IS NOT NULL) OR
-        (rol IN ('AD', 'TR') AND id_empresa IS NULL)
+    CONSTRAINT CK_USUARIO_ROL_EMPRESA CHECK (
+        (ROL = 'EM' AND ID_EMPRESA IS NOT NULL) OR
+        (ROL IN ('AD', 'TR') AND ID_EMPRESA IS NULL)
     )
 );
 
 -- ---------- SILOS ----------
-CREATE TABLE silos (
-    id_silo         SERIAL PRIMARY KEY,
-    id_empresa      INT NULL REFERENCES empresas(id_empresa),
-    habilitado      BOOLEAN NOT NULL DEFAULT TRUE,
-    capacidad_max   NUMERIC(10,2) NOT NULL CHECK (capacidad_max > 0),
-    cantidad_actual NUMERIC(10,2) NOT NULL DEFAULT 0,
-    CONSTRAINT ck_silo_capacidad CHECK (cantidad_actual >= 0 AND cantidad_actual <= capacidad_max)
+CREATE TABLE SILOS (
+    ID_SILO         SERIAL PRIMARY KEY,
+    ID_EMPRESA      INT NULL REFERENCES EMPRESAS(ID_EMPRESA),
+    HABILITADO      BOOLEAN NOT NULL DEFAULT TRUE,
+    CAPACIDAD_MAX   NUMERIC(10,2) NOT NULL CHECK (CAPACIDAD_MAX > 0),
+    CANTIDAD_ACTUAL NUMERIC(10,2) NOT NULL DEFAULT 0,
+    CONSTRAINT CK_SILO_CAPACIDAD CHECK (CANTIDAD_ACTUAL >= 0 AND CANTIDAD_ACTUAL <= CAPACIDAD_MAX)
 );
 
 -- ---------- MATERIALES ----------
-CREATE TABLE materiales (
-    id_material    SERIAL PRIMARY KEY,
-    tipo_general   VARCHAR(80)  NOT NULL,
-    tipo_especifico VARCHAR(80) NOT NULL,
-    nombre         VARCHAR(150) NOT NULL
+CREATE TABLE MATERIALES (
+    ID_MATERIAL     SERIAL PRIMARY KEY,
+    TIPO_GENERAL    VARCHAR(80)  NOT NULL,
+    TIPO_ESPECIFICO VARCHAR(80) NOT NULL,
+    NOMBRE          VARCHAR(150) NOT NULL
 );
 
 -- ---------- TRANSPORTISTAS (conductor + vehículo) ----------
-CREATE TABLE transportistas (
-    id_vehiculo       SERIAL PRIMARY KEY,
-    nombre            VARCHAR(150) NOT NULL,
-    dni               VARCHAR(9)   NOT NULL UNIQUE,
-    matricula_camion  VARCHAR(80)  NOT NULL,
-    matricula_remolque VARCHAR(80) NULL
+CREATE TABLE TRANSPORTISTAS (
+    ID_TRANSPORTISTA    SERIAL PRIMARY KEY,
+    NOMBRE              VARCHAR(150) NOT NULL,
+    DNI                 VARCHAR(9)   NOT NULL UNIQUE,
+    MATRICULA_CAMION    VARCHAR(80)  NOT NULL,
+    MATRICULA_REMOLQUE  VARCHAR(80) NULL
 );
 
 -- ---------- MOVIMIENTOS ----------
-CREATE TABLE movimientos (
-    id_movimiento      SERIAL PRIMARY KEY,
-    id_trabajador      INT NOT NULL REFERENCES usuarios(id_usuario),
-    id_empresa         INT NOT NULL REFERENCES empresas(id_empresa),
-    id_silo            INT NOT NULL REFERENCES silos(id_silo),
-    id_material        INT NOT NULL REFERENCES materiales(id_material),
-    id_vehiculo        INT NOT NULL REFERENCES transportistas(id_vehiculo),
-    tipo_movimiento    tipo_movimiento NOT NULL,
-    fecha_hora_entrada TIMESTAMP NOT NULL,
-    peso_entrada       NUMERIC(10,2) NOT NULL CHECK (peso_entrada > 0),
-    fecha_hora_salida  TIMESTAMP NOT NULL,
-    peso_salida        NUMERIC(10,2) NOT NULL CHECK (peso_salida > 0),
-    cantidad           NUMERIC(10,2) GENERATED ALWAYS AS (ABS(peso_entrada - peso_salida)) STORED,
-    humedad_material   DECIMAL(5,2) NULL,
-    proteina           DECIMAL(5,2) NULL,
-    humedad_ambiental  DECIMAL(5,2) NULL,   -- API meteorológica
-    precipitacion      BOOLEAN      NULL,   -- API meteorológica
-    CONSTRAINT ck_mov_fechas   CHECK (fecha_hora_salida > fecha_hora_entrada),
-    CONSTRAINT ck_mov_cantidad CHECK (peso_entrada <> peso_salida)
+CREATE TABLE MOVIMIENTOS (
+    ID_MOVIMIENTO      SERIAL PRIMARY KEY,
+    ID_TRABAJADOR      INT NOT NULL REFERENCES USUARIOS(ID_USUARIO),
+    ID_EMPRESA         INT NOT NULL REFERENCES EMPRESAS(ID_EMPRESA),
+    ID_SILO            INT NOT NULL REFERENCES SILOS(ID_SILO),
+    ID_MATERIAL        INT NOT NULL REFERENCES MATERIALES(ID_MATERIAL),
+    ID_TRANSPORTISTA   INT NOT NULL REFERENCES TRANSPORTISTAS(ID_TRANSPORTISTA),
+    TIPO_MOVIMIENTO    TIPO_MOVIMIENTO NOT NULL,
+    FECHA_HORA_ENTRADA TIMESTAMP NOT NULL,
+    PESO_ENTRADA       NUMERIC(10,2) NOT NULL CHECK (PESO_ENTRADA > 0),
+    FECHA_HORA_SALIDA  TIMESTAMP NOT NULL,
+    PESO_SALIDA        NUMERIC(10,2) NOT NULL CHECK (PESO_SALIDA > 0),
+    CANTIDAD           NUMERIC(10,2) GENERATED ALWAYS AS (ABS(PESO_ENTRADA - PESO_SALIDA)) STORED,
+    HUMEDAD_MATERIAL   DECIMAL(5,2) NULL,
+    PROTEINA           DECIMAL(5,2) NULL,
+    HUMEDAD_AMBIENTAL  DECIMAL(5,2) NULL,   -- API meteorológica
+    PRECIPITACION      BOOLEAN      NULL,   -- API meteorológica
+    CONSTRAINT CK_MOV_FECHAS   CHECK (FECHA_HORA_SALIDA > FECHA_HORA_ENTRADA),
+    CONSTRAINT CK_MOV_CANTIDAD CHECK (PESO_ENTRADA <> PESO_SALIDA)
 );
 
-CREATE INDEX idx_mov_empresa ON movimientos(id_empresa, fecha_hora_entrada);
-CREATE INDEX idx_mov_silo    ON movimientos(id_silo, fecha_hora_entrada);
+CREATE INDEX IDX_MOV_EMPRESA ON MOVIMIENTOS(ID_EMPRESA, FECHA_HORA_ENTRADA);
+CREATE INDEX IDX_MOV_SILO    ON MOVIMIENTOS(ID_SILO, FECHA_HORA_ENTRADA);
 
 -- ============================================================
 --  TRIGGERS DE INTEGRIDAD
 -- ============================================================
 
 -- 1) Validar el movimiento antes de insertarlo
-CREATE OR REPLACE FUNCTION fn_validar_movimiento() RETURNS TRIGGER AS $$
+CREATE OR REPLACE FUNCTION FN_VALIDAR_MOVIMIENTO() RETURNS TRIGGER AS $$
 DECLARE
-    v_rol        rol_usuario;
-    v_silo_emp   INT;
-    v_habilitado BOOLEAN;
+    V_ROL        ROL_USUARIO;
+    V_SILO_EMP   INT;
+    V_HABILITADO BOOLEAN;
 BEGIN
     -- El que registra debe ser trabajador (o admin), nunca una empresa
-    SELECT rol INTO v_rol FROM usuarios WHERE id_usuario = NEW.id_trabajador;
-    IF v_rol NOT IN ('TR', 'AD') THEN
-        RAISE EXCEPTION 'El usuario % no puede registrar movimientos (rol %)', NEW.id_trabajador, v_rol;
+    SELECT ROL INTO V_ROL FROM USUARIOS WHERE ID_USUARIO = NEW.ID_TRABAJADOR;
+    IF V_ROL NOT IN ('TR', 'AD') THEN
+        RAISE EXCEPTION 'El usuario % no puede registrar movimientos (rol %)', NEW.ID_TRABAJADOR, V_ROL;
     END IF;
 
     -- El silo debe pertenecer a la empresa del movimiento y estar habilitado
-    SELECT id_empresa, habilitado INTO v_silo_emp, v_habilitado
-    FROM silos WHERE id_silo = NEW.id_silo;
+    SELECT ID_EMPRESA, HABILITADO INTO V_SILO_EMP, V_HABILITADO
+    FROM SILOS WHERE ID_SILO = NEW.ID_SILO;
 
-    IF v_silo_emp IS DISTINCT FROM NEW.id_empresa THEN
-        RAISE EXCEPTION 'El silo % no pertenece a la empresa %', NEW.id_silo, NEW.id_empresa;
+    IF V_SILO_EMP IS DISTINCT FROM NEW.ID_EMPRESA THEN
+        RAISE EXCEPTION 'El silo % no pertenece a la empresa %', NEW.ID_SILO, NEW.ID_EMPRESA;
     END IF;
-    IF NOT v_habilitado THEN
-        RAISE EXCEPTION 'El silo % está deshabilitado', NEW.id_silo;
+    IF NOT V_HABILITADO THEN
+        RAISE EXCEPTION 'El silo % está deshabilitado', NEW.ID_SILO;
     END IF;
 
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER trg_validar_movimiento
-BEFORE INSERT ON movimientos
-FOR EACH ROW EXECUTE FUNCTION fn_validar_movimiento();
+CREATE TRIGGER TRG_VALIDAR_MOVIMIENTO
+BEFORE INSERT ON MOVIMIENTOS
+FOR EACH ROW EXECUTE FUNCTION FN_VALIDAR_MOVIMIENTO();
 
 -- 2) Actualizar la cantidad del silo tras registrar el movimiento
 --    (si supera la capacidad o baja de 0, el CHECK del silo aborta toda la transacción)
-CREATE OR REPLACE FUNCTION fn_actualizar_silo() RETURNS TRIGGER AS $$
+CREATE OR REPLACE FUNCTION FN_ACTUALIZAR_SILO() RETURNS TRIGGER AS $$
 BEGIN
-    IF NEW.tipo_movimiento = 'E' THEN
-        UPDATE silos SET cantidad_actual = cantidad_actual + NEW.cantidad
-        WHERE id_silo = NEW.id_silo;
+    IF NEW.TIPO_MOVIMIENTO = 'E' THEN
+        UPDATE SILOS SET CANTIDAD_ACTUAL = CANTIDAD_ACTUAL + NEW.CANTIDAD
+        WHERE ID_SILO = NEW.ID_SILO;
     ELSE
-        UPDATE silos SET cantidad_actual = cantidad_actual - NEW.cantidad
-        WHERE id_silo = NEW.id_silo;
+        UPDATE SILOS SET CANTIDAD_ACTUAL = CANTIDAD_ACTUAL - NEW.CANTIDAD
+        WHERE ID_SILO = NEW.ID_SILO;
     END IF;
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER trg_actualizar_silo
-AFTER INSERT ON movimientos
-FOR EACH ROW EXECUTE FUNCTION fn_actualizar_silo();
+CREATE TRIGGER TRG_ACTUALIZAR_SILO
+AFTER INSERT ON MOVIMIENTOS
+FOR EACH ROW EXECUTE FUNCTION FN_ACTUALIZAR_SILO();
 
 -- 3) Un silo solo puede cambiar de empresa si está vacío
-CREATE OR REPLACE FUNCTION fn_reasignar_silo() RETURNS TRIGGER AS $$
+CREATE OR REPLACE FUNCTION FN_REASIGNAR_SILO() RETURNS TRIGGER AS $$
 BEGIN
-    IF NEW.id_empresa IS DISTINCT FROM OLD.id_empresa AND OLD.cantidad_actual > 0 THEN
-        RAISE EXCEPTION 'El silo % no está vacío (% kg); no se puede reasignar', OLD.id_silo, OLD.cantidad_actual;
+    IF NEW.ID_EMPRESA IS DISTINCT FROM OLD.ID_EMPRESA AND OLD.CANTIDAD_ACTUAL > 0 THEN
+        RAISE EXCEPTION 'El silo % no está vacío (% kg); no se puede reasignar', OLD.ID_SILO, OLD.CANTIDAD_ACTUAL;
     END IF;
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER trg_reasignar_silo
-BEFORE UPDATE OF id_empresa ON silos
-FOR EACH ROW EXECUTE FUNCTION fn_reasignar_silo();
+CREATE TRIGGER TRG_REASIGNAR_SILO
+BEFORE UPDATE OF ID_EMPRESA ON SILOS
+FOR EACH ROW EXECUTE FUNCTION FN_REASIGNAR_SILO();
 
 -- 4) Los movimientos no se borran, y solo pueden completarse los datos de la API
 --    meteorológica (por si hay que reintentar la consulta más tarde)
-CREATE OR REPLACE FUNCTION fn_movimiento_inmutable() RETURNS TRIGGER AS $$
+CREATE OR REPLACE FUNCTION FN_MOVIMIENTO_INMUTABLE() RETURNS TRIGGER AS $$
 BEGIN
     IF TG_OP = 'DELETE' THEN
         RAISE EXCEPTION 'Los movimientos no se pueden eliminar';
     END IF;
 
-    IF (NEW.id_movimiento, NEW.id_trabajador, NEW.id_empresa, NEW.id_silo, NEW.id_material,
-        NEW.id_vehiculo, NEW.tipo_movimiento, NEW.fecha_hora_entrada, NEW.peso_entrada,
-        NEW.fecha_hora_salida, NEW.peso_salida, NEW.humedad_material, NEW.proteina)
+    IF (NEW.ID_MOVIMIENTO, NEW.ID_TRABAJADOR, NEW.ID_EMPRESA, NEW.ID_SILO, NEW.ID_MATERIAL,
+        NEW.ID_TRANSPORTISTA, NEW.TIPO_MOVIMIENTO, NEW.FECHA_HORA_ENTRADA, NEW.PESO_ENTRADA,
+        NEW.FECHA_HORA_SALIDA, NEW.PESO_SALIDA, NEW.HUMEDAD_MATERIAL, NEW.PROTEINA)
        IS DISTINCT FROM
-       (OLD.id_movimiento, OLD.id_trabajador, OLD.id_empresa, OLD.id_silo, OLD.id_material,
-        OLD.id_vehiculo, OLD.tipo_movimiento, OLD.fecha_hora_entrada, OLD.peso_entrada,
-        OLD.fecha_hora_salida, OLD.peso_salida, OLD.humedad_material, OLD.proteina) THEN
+       (OLD.ID_MOVIMIENTO, OLD.ID_TRABAJADOR, OLD.ID_EMPRESA, OLD.ID_SILO, OLD.ID_MATERIAL,
+        OLD.ID_TRANSPORTISTA, OLD.TIPO_MOVIMIENTO, OLD.FECHA_HORA_ENTRADA, OLD.PESO_ENTRADA,
+        OLD.FECHA_HORA_SALIDA, OLD.PESO_SALIDA, OLD.HUMEDAD_MATERIAL, OLD.PROTEINA) THEN
         RAISE EXCEPTION 'Solo se pueden actualizar humedad_ambiental y precipitacion';
     END IF;
 
@@ -173,6 +173,6 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER trg_movimiento_inmutable
-BEFORE UPDATE OR DELETE ON movimientos
-FOR EACH ROW EXECUTE FUNCTION fn_movimiento_inmutable();
+CREATE TRIGGER TRG_MOVIMIENTO_INMUTABLE
+BEFORE UPDATE OR DELETE ON MOVIMIENTOS
+FOR EACH ROW EXECUTE FUNCTION FN_MOVIMIENTO_INMUTABLE();
